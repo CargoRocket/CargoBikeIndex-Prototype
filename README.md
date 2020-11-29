@@ -8,3 +8,13 @@
 R query to generate Cargobike Index maps
 
 See live demo: [cargobike.xatellite.io](https://cargobike.xatellite.io)
+
+
+Run `cargoindex.R ` to create a CargoBikeIndex Map for your city.
+Set the parameter `city` to the desired city.
+To get a proper Mapbox Basemap, insert your Mapbox API Token.
+
+The script queries streets, parks and barriers from OSM.
+
+Based on street type (seperate cycleway, cycleway on the road), street width, road surface, road smoothness, wether the street is located in a park or running in the opposite direction of a oneway street a cargoBikeIndex is computed for each street and displayed on a map.
+Barriers are displayed as red points.
