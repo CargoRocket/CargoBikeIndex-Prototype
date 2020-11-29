@@ -18,3 +18,6 @@ The script queries streets, parks and barriers from OSM.
 
 Based on street type (seperate cycleway, cycleway on the road), street width, road surface, road smoothness, wether the street is located in a park or running in the opposite direction of a oneway street a cargoBikeIndex is computed for each street and displayed on a map.
 Barriers are displayed as red points.
+
+A score of 0 means not usable for cargo bikes (e.g. smoothness is bad or cyclepath width < 1.5 m). 
+A score of 1 means very well suited.
