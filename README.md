@@ -1,3 +1,5 @@
+DEPRECATED - a new version will follow soon!
+
 <div align="center">
   <img src="https://cologne.xatellite.io/logo-pfade.svg" alt="Logo" height="100px" />
 
