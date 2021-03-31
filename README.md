@@ -23,5 +23,5 @@ To get a proper Mapbox Basemap, insert your Mapbox API Token `mapbox_key` into `
 The App runs for any desired city - given the data is provided. 
 Within `shinyapp/R/config.R` a `city_name` with an according `pbf_file` and `geo_selection_file` can be set.
 The corresponding OSM pbf file and geo_selection_file needs to be places in the `data` folder (placed in the root folder).
-E.g., if you want to run the App for Friedrichshain-Kreuzberg, you can use the the pbf file for Berlin and store the outline of Friedrichshain-Kreuzberg as a geojson (or any other geodata format) which is used as the `geo_selection:_file`. If `geo_selection_file` is set to `NA` then the entire pbf file will be used.
+E.g., if you want to run the App for Friedrichshain-Kreuzberg, you can use the the pbf file for Berlin and store the outline of Friedrichshain-Kreuzberg as a geojson (or any other geodata format) and set the name of the `geo_selection_file` accordingly. If `geo_selection_file` is set to `NA` then the entire pbf file will be used.
 If the dataset is too large this might get very slow! 
