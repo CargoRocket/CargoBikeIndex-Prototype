@@ -5,16 +5,16 @@
   ---
 </div>
 
-R query to generate CargoBikeIndex maps
+R ShinyApp to create and visualize the CargoBikeIndex.
 
 See live demo: [Stuttgart](https://cargorocket.shinyapps.io/index_stuttgart/)
 
-## Score Interpretation
+### Score Interpretation
 
 A score of 0 means not usable for cargo bikes. 
 A score of 5 means perfect conditions.
 
-## Run the CargoBikeIndex app
+### Run the CargoBikeIndex app
 
 Run `app.R` to create a ShinyApp with a CargoBikeIndex Map. It shows an overall CargoBikeIndex, as well as the underlying parameters, such as street quality, surface, road type, barriers, traffic and incline.
 
