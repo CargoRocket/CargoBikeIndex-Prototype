@@ -1,25 +1,27 @@
-**DEPRECATED - a new version will follow soon!**
-
 <div align="center">
   <img src="https://cologne.xatellite.io/logo-pfade.svg" alt="Logo" height="100px" />
 
-  CargoRocket Cargobike Index
+  CargoRocket CargoBikeIndex
   ---
 </div>
 
-R query to generate Cargobike Index maps
+R query to generate CargoBikeIndex maps
 
-See live demo: [cargobike.xatellite.io](https://cargobike.xatellite.io)
+See live demo: [Stuttgart](https://cargorocket.shinyapps.io/index_stuttgart/)
 
+## Score Interpretation
 
-Run `cargoindex.R ` to create a CargoBikeIndex Map for your city.
-Set the parameter `city` to the desired city.
-To get a proper Mapbox Basemap, insert your Mapbox API Token.
+A score of 0 means not usable for cargo bikes. 
+A score of 5 means perfect conditions.
 
-The script queries streets, parks and barriers from OSM.
+## Run the CargoBikeIndex app
 
-Based on street type (seperate cycleway, cycleway on the road), street width, road surface, road smoothness, wether the street is located in a park or running in the opposite direction of a oneway street a cargoBikeIndex is computed for each street and displayed on a map.
-Barriers are displayed as red points.
+Run `app.R` to create a ShinyApp with a CargoBikeIndex Map. It shows an overall CargoBikeIndex, as well as the underlying parameters, such as street quality, surface, road type, barriers, traffic and incline.
 
-A score of 0 means not usable for cargo bikes (e.g. smoothness is bad or cyclepath width < 1.5 m). 
-A score of 1 means very well suited.
+To get a proper Mapbox Basemap, insert your Mapbox API Token `mapbox_key` into `R/env.R`.
+
+The App runs for any desired city - given the data is provided. 
+Within `shinyapp/R/config.R` a `city_name` with an according `pbf_file` and `geo_selection_file` can be set.
+The corresponding OSM pbf file and geo_selection_file needs to be places in the `data` folder (placed in the root folder).
+E.g., if you want to run the App for Friedrichshain-Kreuzberg, you can use the the pbf file for Berlin and store the outline of Friedrichshain-Kreuzberg as a geojson (or any other geodata format) which is used as the `geo_selection:_file`. If `geo_selection_file` is set to `NA` then the entire pbf file will be used.
+If the dataset is too large this might get very slow! 

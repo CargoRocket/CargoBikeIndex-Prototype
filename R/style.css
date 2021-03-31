@@ -1,0 +1,40 @@
+body{font-family: 'Roboto', sans-serif; }
+div.outer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  padding: 0;
+}
+#title {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+#info_text {
+  font-size: 12px;
+  padding-bottom: 15px;
+}
+#input_box{
+  z-index:500; 
+  text-align: left; 
+  background: #ECECECE6; 
+  padding: 15px; 
+  border-radius: 10px;
+  width:360px;
+}
+
+#index_radioB {
+}
+
+#subgroup_radioB{
+  font-size: 12px;
+  background: #BBBBBBE6;
+  padding: 15px; 
+  border-radius: 10px;
+
+}
+#info_hover{
+  font-size:12px;
+}

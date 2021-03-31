@@ -1,0 +1,12 @@
+name: index_stuttgart
+title: index_stuttgart
+username:
+account: cargorocket
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3891035
+bundleId: 4416184
+url: https://cargorocket.shinyapps.io/index_stuttgart/
+when: 1617201194.48334
+asMultiple: FALSE
+asStatic: FALSE
