@@ -9,6 +9,7 @@ library(htmltools)
 library(readr)
 library(shinyBS)
 library(rgdal)
+library(here)
 # library(RSQLite)
 
 source(here("R", "config.R"))
@@ -267,8 +268,8 @@ server <- function(input, output, session) {
           addLegend(
             layerId = "legend",
             labels = c(
-              "1: sehr schlecht (Hauptstraßen (primary) ohne Radweg, Radweg < 1.2m",
-              "2: schlecht (Landesstraße (secondary) ohne Radweg, Radspur < 1.2m, Wege mit Fußverkehr geteilt",
+              "1: sehr schlecht (Hauptstraßen (primary) ohne Radweg, Radweg < 1.2m)",
+              "2: schlecht (Landesstraße (secondary) ohne Radweg, Radspur < 1.2m, Wege mit Fußverkehr geteilt)",
               "3: mittelmäßig (default Radweg ohne Breite, Landesstraße (tertiary) ohne Radweg)",
               "4: gut (Radweg min 1.6 m, Radspur mind. 1.2 m, default Radspur ohne Breite, Wohngebiete)",
               "5: optimal (Fahrradstraße, min. 2m Radweg)"
@@ -301,7 +302,7 @@ server <- function(input, output, session) {
               "0: nicht passierbar (Sand, Steine, Matsch)",
               "1: sehr schlecht (unbefestigter Untergrund)",
               "2: schlecht (Kopfsteinpflaster, Kiesel)",
-              "3: mittelmäßig (unebener Asphalt / Pflastersteine, Schlaglöcher und Wurzeln, unbfestigt aber verdichtet z.B. im Park)",
+              "3: mittelmäßig (unebener Asphalt / Pflastersteine, Schlaglöcher und Wurzeln, unbefestigt aber verdichtet z.B. im Park)",
               "4: gut (gepflastert)",
               "5: optimal (ebener Asphalt)",
               "keine Daten"
