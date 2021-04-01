@@ -21,7 +21,7 @@ streets_data <- function(pbf_file, geo_selection_file) {
     query = "SELECT * FROM points WHERE BARRIER <> '' "
   )
 
-  if (!is.na(geo_selection_file)) {
+  if (!is.na(geo_selection_file) & geo_selection_file != "") {
     geo_selection <- read_sf(here("data", geo_selection_file))
     streets <- streets[st_intersects(streets, geo_selection, sparse = F)[, 1], ]
     barriers <- barriers[st_intersects(barriers, geo_selection, sparse = F)[, 1], ]
@@ -78,6 +78,7 @@ streets_data <- function(pbf_file, geo_selection_file) {
         cycleway_left_width_cleaned, cycleway_both_width_cleaned
       )
     )
+  streets[streets$highway == "cycleway", ]$cycleway_combined <- "track"
   streets[streets$highway == "cycleway", ]$cycleway_width_combined <- streets[streets$highway == "cycleway", ]$width_cleaned
 
   # all road types rated with "0" (not allowed / possible to ride on for cargo bikes)
@@ -285,16 +286,11 @@ streets_data <- function(pbf_file, geo_selection_file) {
     mutate(
       cbindex_cycleways = case_when(
         bicycle_road == "yes" ~ 5,
-        width_cleaned >= 2 & highway == "cycleway" ~ 5,
-        width_cleaned >= 1.6 & width_cleaned <= 2 & highway == "cycleway" ~ 4,
-        width_cleaned >= 1.2 & width_cleaned <= 1.6 & highway == "cycleway" ~ 3,
-        width_cleaned < 1.2 & highway == "cycleway" ~ 1,
-        highway == "cycleway" ~ 3, # default ohne width
         # TODO: cycleway separat für beide Richtungen darstellen
-        cycleway_width_cleaned >= 2 & cycleway_combined %in% c("track", "lane") ~ 5,
-        cycleway_width_cleaned >= 1.6 & cycleway_width_cleaned <= 2 & cycleway_combined %in% c("track", "lane") ~ 4,
-        cycleway_width_cleaned >= 1.2 & width_cleaned <= 1.6 & cycleway_combined == "lane" ~ 4,
-        cycleway_width_cleaned >= 1.2 & width_cleaned <= 1.6 & cycleway_combined == "track" ~ 3, # schmalerer track schlechter als schmale lane
+        cycleway_width_combined >= 2 & cycleway_combined %in% c("track", "lane") ~ 5,
+        cycleway_width_combined >= 1.6 & cycleway_width_combined <= 2 & cycleway_combined %in% c("track", "lane") ~ 4,
+        cycleway_width_combined >= 1.2 & width_cleaned <= 1.6 & cycleway_combined == "lane" ~ 4,
+        cycleway_width_combined >= 1.2 & width_cleaned <= 1.6 & cycleway_combined == "track" ~ 3, # schmalerer track schlechter als schmale lane
         width_cleaned < 1.2 & cycleway_combined == "lane" ~ 2,
         width_cleaned < 1.2 & cycleway_combined == "track" ~ 1,
         cycleway_combined == "lane" ~ 4,
