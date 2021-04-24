@@ -37,7 +37,7 @@ ui <- bootstrapPage(
         label = "Daten für:",
         choices = c(
           "CargoBikeIndex" = "index", "Straßenqualität" = "street_quality",
-          "Barrieren" = "barriers", "Verkehr" = "traffic", "Steigung" = "incline"
+          "Barrieren" = "barriers", "Verkehr" = "traffic"
         ),
         selected = "index"
       ),
@@ -53,16 +53,19 @@ ui <- bootstrapPage(
 
 server <- function(input, output, session) {
   streets_path <- here("data", paste0(city_name, ".Rds"))
-  if (file.exists(streets_path) & !delete_cache) {
-    streets <- readRDS(here("data", paste0(city_name, ".Rds")))
-  } else {
-    source(here("R", "prepare_data.R"))
-    streets <- streets_data(pbf_file, geo_selection_file)
-    dir.create(here("data"), showWarnings = F)
-    saveRDS(streets, streets_path)
-  }
+  streets <- readRDS(here("data", paste0(city_name, ".Rds")))
+  
+  # TODO: better integrate preprocessing without duplicating script
+  # if (file.exists(streets_path) & !delete_cache) {
+  #   streets <- readRDS(here("data", paste0(city_name, ".Rds")))
+  # } else {
+  #   source(here("R", "prepare_data.R"))
+  #   streets <- streets_data(pbf_file, geo_selection_file)
+  #   dir.create(here("data"), showWarnings = F)
+  #   saveRDS(streets, streets_path)
+  # }
 
-  GrYlRd <- c("#0F423E", "#217D04", "#f5c800", "#FF9D00", "#B60202", "#6E1511") # darkgreen, green, yellow, orange, red, darkred
+  GrYlRd <- c("#0F423E", "#479E8F", "#f4d03f", "#E76F51", "#B60202", "#6E1511") # darkgreen, green, yellow, orange, red, darkred
   palette <- colorBin(GrYlRd, domain = c(0:6), reverse = T, bins = 6)
 
   output$map <- renderLeaflet({
@@ -135,8 +138,8 @@ server <- function(input, output, session) {
         choices = c(
           "Straßenqualität gesamt" = "street_quality_combined",
           "Straßentyp" = "type_of_road",
-          "Oberfläche" = "surface",
-          "Querneigung" = "incline_across"
+          "Oberfläche" = "surface"
+          #"Querneigung" = "incline_across"
         ),
         selected = "street_quality_combined"
       )
@@ -154,7 +157,7 @@ server <- function(input, output, session) {
         addPolylines(
           data = filter(streets, !is.na(which_barrier)),
           group = "streets",
-          popup = ~ paste("<b>Barriere:", which_barrier, "</b><br>", "Max. Breite:", maxwidth_combined, "<br>", "Bordsteinhöhe:", kerb),
+          popup = ~ paste("<b>Barriere:", which_barrier, "</b><br>", "Max. Breite / Bordsteinhöhe:", maxwidth_combined, "<br>"),
           color = ~ palette(cbindex_barrier),
           opacity = 0.9,
           weight = 5
@@ -181,19 +184,6 @@ server <- function(input, output, session) {
         choices = c("Verkehr gesamt", "Autoverkehr", "Fußverkehr"),
         selected = "Verkehr gesamt"
       )
-    } else if (input$index_radioB == "incline") {
-      hide("subgroup_radioB")
-
-      output$title <- renderText({
-        "Steigung"
-      })
-      output$info_text <- renderText({
-        incline_info
-      })
-
-      leafletProxy("map") %>%
-        clearGroup("streets") %>%
-        removeControl("legend")
     }
   })
 
@@ -311,17 +301,17 @@ server <- function(input, output, session) {
             opacity = 0.8,
             position = "bottomleft", title = "Straßenqualität"
           )
-      } else if (input$subgroup_radioB == "incline_across") {
-        output$title <- renderText({
-          "Querneigung"
-        })
-        output$info_text <- renderText({
-          incline_across_info
-        })
-
-        leafletProxy("map") %>%
-          clearGroup("streets") %>%
-          removeControl("legend")
+      # } else if (input$subgroup_radioB == "incline_across") {
+      #   output$title <- renderText({
+      #     "Querneigung"
+      #   })
+      #   output$info_text <- renderText({
+      #     incline_across_info
+      #   })
+      # 
+      #   leafletProxy("map") %>%
+      #     clearGroup("streets") %>%
+      #     removeControl("legend")
       } else if (input$subgroup_radioB == "Verkehr gesamt") {
         output$title <- renderText({
           "Verkehr"
