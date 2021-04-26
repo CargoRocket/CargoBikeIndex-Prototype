@@ -53,7 +53,9 @@ ui <- bootstrapPage(
 
 server <- function(input, output, session) {
   streets_path <- here("data", paste0(city_name, ".Rds"))
-  streets <- readRDS(here("data", paste0(city_name, ".Rds")))
+  markets_path <- here("data", paste0(city_name, "_markets.Rds"))
+  streets <- readRDS(streets_path)
+  markets <- readRDS(markets_path)
   
   # TODO: better integrate preprocessing without duplicating script
   # if (file.exists(streets_path) & !delete_cache) {
@@ -67,6 +69,8 @@ server <- function(input, output, session) {
 
   GrYlRd <- c("#0F423E", "#479E8F", "#f4d03f", "#E76F51", "#B60202", "#6E1511") # darkgreen, green, yellow, orange, red, darkred
   palette <- colorBin(GrYlRd, domain = c(0:6), reverse = T, bins = 6)
+  palette_pedestrian_traffic <- colorFactor(c("#E76F51"), domain = NULL, na.color = "transparent")
+
 
   output$map <- renderLeaflet({
     leaflet(streets) %>%
@@ -100,6 +104,8 @@ server <- function(input, output, session) {
 
       leafletProxy("map") %>%
         clearGroup("streets") %>%
+        clearGroup("markets") %>%
+        removeControl("legend2") %>% 
         addPolylines(
           data = streets,
           group = "streets",
@@ -154,6 +160,8 @@ server <- function(input, output, session) {
       })
       leafletProxy("map") %>%
         clearGroup("streets") %>%
+        clearGroup("markets") %>%
+        removeControl("legend2") %>% 
         addPolylines(
           data = filter(streets, !is.na(which_barrier)),
           group = "streets",
@@ -165,12 +173,12 @@ server <- function(input, output, session) {
         addLegend(
           layerId = "legend",
           labels = c(
-            "0: nicht passierbar (Schranken, Umlaufgitter, Poller < 0.9 m)",
-            "1: sehr schlecht passierbar (Poller < 1.0 m; nicht gesenkter Bordstein)",
-            "2: schlecht passierbar (Poller < 1.2 m; default Bordstein (ohne Höhenangabe))",
-            "3: mittelmäßig passierbar (abgesenkter Bordstein)",
-            "4: gut passierbar (Poller < 1.5 m; default Poller (keine Breitenangabe))",
-            "5: problemlos passierbar (Poller >= 1.5 m; ebenerdiger Bordstein)"
+            "<b>0: nicht passierbar</b> Schranken | Umlaufgitter | Poller < 0.9 m",
+            "<b>1: sehr schlecht passierbar</b> Poller < 1.0 m | nicht gesenkter Bordstein",
+            "<b>2: schlecht passierbar</b> Poller < 1.2 m |default Bordstein (ohne Höhenangabe)",
+            "<b>3: mittelmäßig passierbar</b> abgesenkter Bordstein",
+            "<b>4: gut passierbar</b> Poller < 1.5 m |default Poller (keine Breitenangabe)",
+            "<b>5: problemlos passierbar</b> Poller >= 1.5 m | ebenerdiger Bordstein"
           ),
           colors = palette(c(0:5)),
           opacity = 0.8,
@@ -199,6 +207,8 @@ server <- function(input, output, session) {
 
         leafletProxy("map") %>%
           clearGroup("streets") %>%
+          clearGroup("markets") %>%
+          removeControl("legend2") %>% 
           addPolylines(
             data = streets,
             group = "streets",
@@ -241,6 +251,8 @@ server <- function(input, output, session) {
 
         leafletProxy("map") %>%
           clearGroup("streets") %>%
+          clearGroup("markets") %>%
+          removeControl("legend2") %>% 
           addPolylines(
             data = streets,
             group = "streets",
@@ -249,6 +261,7 @@ server <- function(input, output, session) {
               "<br>", "Radwegs-Breite:", cycleway_width_combined,
               "<br>", "Fahrradstraße:", bicycle_road,
               "<br>", "Höchstgeschwindigkeit:", maxspeed, "<br>",
+              "<br>", "Absteigen notwendig:", dismount_necessary, "<br>",
               "Getrennter Radweg:", segregated
             ),
             color = ~ palette(cbindex_cycleways),
@@ -258,11 +271,11 @@ server <- function(input, output, session) {
           addLegend(
             layerId = "legend",
             labels = c(
-              "1: sehr schlecht (Hauptstraßen (primary) ohne Radweg, Radweg < 1.2m)",
-              "2: schlecht (Landesstraße (secondary) ohne Radweg, Radspur < 1.2m, Wege mit Fußverkehr geteilt)",
-              "3: mittelmäßig (default Radweg ohne Breite, Landesstraße (tertiary) ohne Radweg)",
-              "4: gut (Radweg min 1.6 m, Radspur mind. 1.2 m, default Radspur ohne Breite, Wohngebiete)",
-              "5: optimal (Fahrradstraße, min. 2m Radweg)"
+              "<b>1: sehr schlecht</b> Hauptstraßen (primary) ohne Radweg | Radweg < 1.2m | absteigen notwendig",
+              "<b>2: schlecht</b> Landesstraße (secondary) ohne Radweg | Radspur < 1.2m | Wege mit Fußverkehr geteilt",
+              "<b>3: mittelmäßig</b> default Radweg ohne Breite | Landesstraße (tertiary) ohne Radweg",
+              "<b>4: gut</b> Radweg min 1.6m | Radspur mind. 1.2m | default Radspur ohne Breite | Wohngebiete",
+              "<b>5: optimal</b> Fahrradstraße | min. 2m Radweg"
             ),
             colors = palette(c(1:5)),
             opacity = 0.8,
@@ -278,6 +291,8 @@ server <- function(input, output, session) {
 
         leafletProxy("map") %>%
           clearGroup("streets") %>%
+          clearGroup("markets") %>%
+          removeControl("legend2") %>% 
           addPolylines(
             data = streets,
             group = "streets",
@@ -321,7 +336,10 @@ server <- function(input, output, session) {
         })
 
         leafletProxy("map") %>%
-          clearGroup("streets")
+          clearGroup("streets") %>% 
+          clearGroup("markets") %>% 
+          removeControl("legend2")
+          
       } else if (input$subgroup_radioB == "Autoverkehr") {
         output$title <- renderText({
           "Autoverkehr"
@@ -329,11 +347,15 @@ server <- function(input, output, session) {
 
         leafletProxy("map") %>%
           clearGroup("streets") %>%
-          removeControl("legend")
+          clearGroup("markets") %>% 
+          removeControl("legend") %>% 
+          removeControl("legend2") 
+          
         output$info_text <- renderText({
           cartraffic_info
         })
       } else if (input$subgroup_radioB == "Fußverkehr") {
+        
         output$title <- renderText({
           "Fußverkehr"
         })
@@ -343,7 +365,42 @@ server <- function(input, output, session) {
 
         leafletProxy("map") %>%
           clearGroup("streets") %>%
-          removeControl("legend")
+          clearGroup("markets") %>% 
+          removeControl("legend") %>%
+          removeControl("legend2") %>% 
+          addPolylines(
+            data = streets,
+            group = "streets",
+            color = ~ palette_pedestrian_traffic(pedestrian_traffic),
+            opacity = 0.9,
+            weight = 3
+          ) %>% 
+          addCircleMarkers(
+            data = markets,
+            group = "markets",
+            popup = ~ paste(
+              "Wochenmarkt:", name,
+              "<br>", "Öffnungszeiten:", opening_hours),
+            color = "transparent",
+            fillColor = "#B60202",
+            fillOpacity = 0.8,
+            radius = 5
+          ) %>% 
+          addLegend(
+            layerId = "legend",
+            labels = c("geteite Wege"),
+            colors = c("#E76F51"),
+            opacity = 0.8,
+            position = "bottomleft", title = "Geteilte Wege mit Fußgänger:innen (Linien)"
+            ) %>% 
+              addLegend(
+                layerId = "legend2",
+                labels = c("Wochenmärkte"),
+                colors = c("#B60202"),
+            opacity = 0.8,
+            position = "bottomleft", title = "Wochenmärkte (Punkte)"
+            )
+          
       }
     },
     ignoreInit = T
