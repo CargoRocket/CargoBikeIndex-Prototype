@@ -10,6 +10,7 @@ library(readr)
 library(shinyBS)
 library(rgdal)
 library(here)
+library(tidyr)
 # library(RSQLite)
 
 source(here("R", "config.R"))
@@ -57,6 +58,24 @@ server <- function(input, output, session) {
   streets <- readRDS(streets_path)
   markets <- readRDS(markets_path)
   
+  streets <- streets %>% 
+    mutate(cycleway_string = case_when(
+      cycleway_combined == "track" ~ "Radweg",
+      cycleway_combined == "lane" ~ "Radspur / Schutzstreifen",
+      cycleway_combined == "opposite_track" ~ "Radspur entgegen der Fahrtrichtung",
+      cycleway_combined == "share_busway" ~ "geteilte Busspur"
+    ),
+    cycleway_width_string = ifelse(is.na(cycleway_width_combined), NA, paste("Breite:", cycleway_width_combined, "m")),
+    cycleway_oneway_string = ifelse(cycleway_oneway_combined == "yes", "Zweirichtungsradweg", NA),
+    dismount_string = ifelse(dismount_necessary, "absteigen", NA),
+    segregated_string = ifelse(segregated %in% c("no"), "geteilt mit Fußweg", NA),
+    bicycle_road_string = ifelse(bicycle_road %in% c("yes"), "Fahrradstraße", NA)) %>% 
+    unite("display_label_cycleway", 
+                 c(bicycle_road_string, cycleway_string, cycleway_width_string, cycleway_oneway_string,
+                   segregated_string, dismount_string, surface_combined, smoothness_combined), na.rm = T, sep = ", ", remove = F) %>% 
+    unite("display_label_barrier", 
+          c(which_barrier, maxwidth_combined), na.rm = T, sep = ", ", remove = F)
+  
   # TODO: better integrate preprocessing without duplicating script
   # if (file.exists(streets_path) & !delete_cache) {
   #   streets <- readRDS(here("data", paste0(city_name, ".Rds")))
@@ -69,6 +88,7 @@ server <- function(input, output, session) {
 
   GrYlRd <- c("#0F423E", "#479E8F", "#f4d03f", "#E76F51", "#B60202", "#6E1511") # darkgreen, green, yellow, orange, red, darkred
   palette <- colorBin(GrYlRd, domain = c(0:6), reverse = T, bins = 6)
+  palette_no_na <- colorBin(GrYlRd, domain = c(0:6), reverse = T, bins = 6, na.color = "transparent")
   palette_pedestrian_traffic <- colorFactor(c("#E76F51"), domain = NULL, na.color = "transparent")
 
 
@@ -110,10 +130,14 @@ server <- function(input, output, session) {
           data = streets,
           group = "streets",
           popup = ~ paste(
+            name,
+            "<br>","<br>",
             "<b>Index:", cbindex, "</b>",
             "<br>", "Index Straßenqualität:", cbindex_street_quality,
+            "<br>", display_label_cycleway,
+            "<br>",
             "<br>", "Index Barrieren:", cbindex_barrier,
-            "<br>", "Straßentyp:", highway
+            "<br>", display_label_barrier
           ),
           color = ~ palette(cbindex),
           opacity = 0.9,
@@ -189,8 +213,8 @@ server <- function(input, output, session) {
 
       updateRadioButtons(session, "subgroup_radioB",
         label = "Verkehr Subgruppen:",
-        choices = c("Verkehr gesamt", "Autoverkehr", "Fußverkehr"),
-        selected = "Verkehr gesamt"
+        choices = c("Autoverkehr", "Fußverkehr"),
+        selected = "Autoverkehr"
       )
     }
   })
@@ -257,12 +281,13 @@ server <- function(input, output, session) {
             data = streets,
             group = "streets",
             popup = ~ paste(
-              "<b>Straßentyp:", highway, "</b><br>", "Radweg:", cycleway_combined,
-              "<br>", "Radwegs-Breite:", cycleway_width_combined,
+              "<b>Straßentyp:", highway, "</b>", 
               "<br>", "Fahrradstraße:", bicycle_road,
-              "<br>", "Höchstgeschwindigkeit:", maxspeed, "<br>",
-              "<br>", "Absteigen notwendig:", dismount_necessary, "<br>",
-              "Getrennter Radweg:", segregated
+              "<br>", "Radweg:", cycleway_combined,
+              "<br>", "Radwegs-Breite:", cycleway_width_combined,
+              "<br>", "Getrennter Radweg:", segregated,
+              "<br>", "Absteigen notwendig:", dismount_necessary,
+              "<br>", "Höchstgeschwindigkeit:", maxspeed
             ),
             color = ~ palette(cbindex_cycleways),
             opacity = 0.9,
@@ -327,19 +352,6 @@ server <- function(input, output, session) {
       #   leafletProxy("map") %>%
       #     clearGroup("streets") %>%
       #     removeControl("legend")
-      } else if (input$subgroup_radioB == "Verkehr gesamt") {
-        output$title <- renderText({
-          "Verkehr"
-        })
-        output$info_text <- renderText({
-          traffic_info
-        })
-
-        leafletProxy("map") %>%
-          clearGroup("streets") %>% 
-          clearGroup("markets") %>% 
-          removeControl("legend2")
-          
       } else if (input$subgroup_radioB == "Autoverkehr") {
         output$title <- renderText({
           "Autoverkehr"
@@ -348,8 +360,26 @@ server <- function(input, output, session) {
         leafletProxy("map") %>%
           clearGroup("streets") %>%
           clearGroup("markets") %>% 
-          removeControl("legend") %>% 
-          removeControl("legend2") 
+          removeControl("legend") %>%
+          removeControl("legend2") %>% 
+          addPolylines(
+            data = streets,
+            group = "streets",
+            color = ~ palette_no_na(car_traffic),
+            opacity = 0.9,
+            weight = 3
+          ) %>% 
+          addLegend(
+            layerId = "legend",
+            labels = c("geteilte Hauptstraßen (primary, trunk)",
+                       "geteilte Landesstraße (secondary)",
+                       "geteilte Landesstraße (tertiary)",
+                       "geteilte Wohnstraßen"),
+            colors = palette_no_na(c(1:4)),
+            opacity = 0.8,
+            position = "bottomleft", title = "Geteilte Straßen mit Autoverkehr"
+          )
+        
           
         output$info_text <- renderText({
           cartraffic_info

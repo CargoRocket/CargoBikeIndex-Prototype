@@ -1,8 +1,8 @@
 index_info <- "Der Index berechnet sich aus den Werten zur Straßenqualität und Barrieren. 
-Information zu Fuß- und Autoverkehr ist im Index NICHT berücksichtigt, sondern nur zur Information angezeigt."
+Informationen zum Vekehr sind im Index NICHT berücksichtigt, sondern werden hier nur zur Information angezeigt."
 
-street_quality_info <- "Die Straßenqualität setzt sich aus der Art der Straße (Radweg, Hauptstraße, etc.),
-der Oberflächenbeschaffenheit (Asphalt in guter oder mittlerer Qualität, Kopfsteinplaster,etc.) zusammen."
+street_quality_info <- "Die Straßenqualität setzt sich aus der Art der Straße (z.B. Radweg, Hauptstraße),
+der Oberflächenbeschaffenheit (z.B. gute oder schlechte Qualität, Asphalt oder Kopfsteinplaster) zusammen."
 
 street_type_info <- "Der Straßentyp beschreibt, wie gut die Straße für ein Lastenrad geeignet ist.
 Dabei ist Radinfrastruktur (ein Radweg `track`, eine Spur / Schutzstreifen `lane`), die mind. 2 Meter breit ist, am besten.
@@ -26,14 +26,19 @@ maximal durchlässiger Breite kein Problem oder nicht passierbar sein; falls kei
 dass diese passierbar sind. Nicht abgesenkte Bordsteine
 werden als eine große - jedoch nicht unmögliche Hürde betrachtet."
 
-traffic_info <- "Auf Straßen und Wegen die mit Autos und Fußgänger:innen geteilt werden, sind Lastenräder werden Lastenräder durch diese potenziell ausgebremst. 
-Straßen mit Stau oder volle Parks am Wochenende erlauben Lastenrädern nur kaum das Überholen, wenn kein eigener Radweg vorhanden ist. 
-Ebenso können Wochenmärkte das Durchkommen stark erschweren. 
-Hauptstraßen und Fußwege ohne eigenen Radweg sind in der Evaluation der Straßenqualität bereits negativer bewertet. 
-Da der Verkehr je nach Uhrzeit und Wochentag stark schwankt und sich je nach Straße nochmals stark unterscheiden kann,
-ist ein zusätzlicher Einbezug in einen allgemeinen Index nur schwer möglich.
-Zu Informationszwecken werden diese Straßen hier angezeigt, sind jedoch nicht zusätzlich in der Indexberechnung berücksichtigt."
+cartraffic_info <- "Straßen, auf denen kein eigener Radweg vorhanden ist und die Fahrbahn sich somit mit dem Autoverkehr geteilt werden muss,
+stellen potenziell eine Staugefahr für Lastenräder dar. Der Verkehr ist hier stark variabel und lässt sich schwer in ein allgemeines Ranking integrieren.
+Hier sind alle Straßen dargestellt, auf denen sich Autos und Fahrräder die Fahrbahn teilen, wobei Hauptstraßen als besonders kritisch gesehen werden,
+während Wohngebiete weniger kritisch bewertet sind.
+Hauptstraßen ohne eigenen Radweg sind über die Straßenqualität bereits schlechter bewertet. 
+Darüber hinaus wird der Autoverkehr NICHT weiter in der Indexberechnung berücksichtigt, sondern hier nur zur Information dargestellt."
 
-cartraffic_info <- "NOCH NICHT IMPLEMENTIERT. Autoverkehr ..."
+pedestrian_info <- "Fußverkehr stellt für Lastenräder besonders in zwei Fällen ein Hindernis dar: 
+1. bei Veranstaltungen: Hier sind vor allem Wochenmärkte regelmäßige Veranstaltungen, bei denen Straßen gesperrt sind.
 
-pedestrian_info <- "NOCH NICHT IMPLEMENTIERT. Fußgänger ..."
+2. stark frequentierte, geteilte Wege: Beispielsweise ist an einem sonnigen Wochenende in vielen Parks für Lastenräder fast nur Schrittgeschwindigkeit möglich. 
+
+Hier sind alle Wege, die mit Fußgänger:innen geteilt werden und potenziell von Fußverkehr beeinträchtigt sind dargestellt. 
+Wege, auf denen ohnehin abgestiegen werden muss, sind nicht dargestellt, da die langsame Geschwindigkeit hier unabhängig von der Anzahl an Fußgänger:innen ist.
+<br>Beide Fälle sind stark zeitabhängig. Mit Fußgänger:innen geteilte Wege sind über die Straßenqualität bereits schlechter bewertet.
+Darüber hinaus wird der Fußverkehr NICHT weiter in der Indexberechnung berücksichtigt, sondern hier nur zur Information dargestellt."
