@@ -17,6 +17,7 @@ source(here("R", "config.R"))
 source(here("R", "env.R"))
 source(here("R", "text_fields.R"))
 
+
 ui <- bootstrapPage(
   title = "CargoBikeIndex",
   useShinyjs(),
@@ -47,7 +48,7 @@ ui <- bootstrapPage(
     ),
     absolutePanel(
       bottom = 20, right = 20, style = "z-index:500; text-align: right;", fixed = T,
-      tags$p(HTML('<a href = "https://cargorocket.de">CargoRocket Webseite</a>')),
+      tags$p(HTML('<a href = "https://cargorocket.de/impress">Impressum</a>')),
     )
   )
 )
@@ -58,24 +59,8 @@ server <- function(input, output, session) {
   streets <- readRDS(streets_path)
   markets <- readRDS(markets_path)
   
-  streets <- streets %>% 
-    mutate(cycleway_string = case_when(
-      cycleway_combined == "track" ~ "Radweg",
-      cycleway_combined == "lane" ~ "Radspur / Schutzstreifen",
-      cycleway_combined == "opposite_track" ~ "Radspur entgegen der Fahrtrichtung",
-      cycleway_combined == "share_busway" ~ "geteilte Busspur"
-    ),
-    cycleway_width_string = ifelse(is.na(cycleway_width_combined), NA, paste("Breite:", cycleway_width_combined, "m")),
-    cycleway_oneway_string = ifelse(cycleway_oneway_combined == "yes", "Zweirichtungsradweg", NA),
-    dismount_string = ifelse(dismount_necessary, "absteigen", NA),
-    segregated_string = ifelse(segregated %in% c("no"), "geteilt mit Fußweg", NA),
-    bicycle_road_string = ifelse(bicycle_road %in% c("yes"), "Fahrradstraße", NA)) %>% 
-    unite("display_label_cycleway", 
-                 c(bicycle_road_string, cycleway_string, cycleway_width_string, cycleway_oneway_string,
-                   segregated_string, dismount_string, surface_combined, smoothness_combined), na.rm = T, sep = ", ", remove = F) %>% 
-    unite("display_label_barrier", 
-          c(which_barrier, maxwidth_combined), na.rm = T, sep = ", ", remove = F)
-  
+  streets <- preprocess_display_labels(streets)
+
   # TODO: better integrate preprocessing without duplicating script
   # if (file.exists(streets_path) & !delete_cache) {
   #   streets <- readRDS(here("data", paste0(city_name, ".Rds")))
@@ -87,10 +72,11 @@ server <- function(input, output, session) {
   # }
 
   GrYlRd <- c("#0F423E", "#479E8F", "#f4d03f", "#E76F51", "#B60202", "#6E1511") # darkgreen, green, yellow, orange, red, darkred
+  GrYlRd_4 <- c( "#479E8F", "#f4d03f", "#E76F51", "#B60202") # darkgreen, green, yellow, orange, red, darkred
   palette <- colorBin(GrYlRd, domain = c(0:6), reverse = T, bins = 6)
-  palette_no_na <- colorBin(GrYlRd, domain = c(0:6), reverse = T, bins = 6, na.color = "transparent")
+  palette_0_to_1 <- colorFactor(GrYlRd, domain = c(0,0.2,0.4,0.6,0.8,1), reverse = T)
+  palette_no_na <- colorFactor(GrYlRd_4, domain = c(0.2,0.4,0.6,0.8), reverse = T, na.color = "transparent")
   palette_pedestrian_traffic <- colorFactor(c("#E76F51"), domain = NULL, na.color = "transparent")
-
 
   output$map <- renderLeaflet({
     leaflet(streets) %>%
@@ -130,14 +116,13 @@ server <- function(input, output, session) {
           data = streets,
           group = "streets",
           popup = ~ paste(
-            name,
-            "<br>","<br>",
-            "<b>Index:", cbindex, "</b>",
-            "<br>", "Index Straßenqualität:", cbindex_street_quality,
-            "<br>", display_label_cycleway,
+            "<b>", name, "- Index:", cbindex, "</b>",
             "<br>",
-            "<br>", "Index Barrieren:", cbindex_barrier,
-            "<br>", display_label_barrier
+            "<br>", "Sub-Index Straßenqualität:", cbindex_street_quality,
+            "<br>", "<i>", display_label_cycleway, "</i>",
+            "<br>",
+            "<br>", "Sub-Index Barrieren:", cbindex_barrier,
+            "<br>", "<i>", display_label_barrier, "</i>"
           ),
           color = ~ palette(cbindex),
           opacity = 0.9,
@@ -155,7 +140,7 @@ server <- function(input, output, session) {
           ),
           colors = palette(c(0:5)),
           opacity = 0.8,
-          position = "bottomleft", title = "Straßenqualität gesamt"
+          position = "bottomleft", title = "CargoBikeIndex"
         )
     } else if (input$index_radioB == "street_quality") {
       shinyjs::show("subgroup_radioB")
@@ -189,22 +174,24 @@ server <- function(input, output, session) {
         addPolylines(
           data = filter(streets, !is.na(which_barrier)),
           group = "streets",
-          popup = ~ paste("<b>Barriere:", which_barrier, "</b><br>", "Max. Breite / Bordsteinhöhe:", maxwidth_combined, "<br>"),
-          color = ~ palette(cbindex_barrier),
+          popup = ~ paste("<b>Barriere:", which_barrier, "</b><br>", 
+                          "Max. Breite:", maxwidth_combined, "<br>",
+                          "Bordsteinhöhe:", display_label_kerb, "<br>"),
+          color = ~ palette_0_to_1(cbindex_barrier),
           opacity = 0.9,
           weight = 5
         ) %>%
         addLegend(
           layerId = "legend",
           labels = c(
-            "<b>0: nicht passierbar</b> Schranken | Umlaufgitter | Poller < 0.9 m",
-            "<b>1: sehr schlecht passierbar</b> Poller < 1.0 m | nicht gesenkter Bordstein",
-            "<b>2: schlecht passierbar</b> Poller < 1.2 m |default Bordstein (ohne Höhenangabe)",
-            "<b>3: mittelmäßig passierbar</b> abgesenkter Bordstein",
-            "<b>4: gut passierbar</b> Poller < 1.5 m |default Poller (keine Breitenangabe)",
-            "<b>5: problemlos passierbar</b> Poller >= 1.5 m | ebenerdiger Bordstein"
+            "<b>0: nicht passierbar</b> Umlaufgitter | Poller < 0.9 m",
+            "<b>0.2: sehr schlecht passierbar</b> Poller < 1.0 m | nicht gesenkter Bordstein",
+            "<b>0.4: schlecht passierbar</b> Poller < 1.2 m | default Bordstein (ohne Höhenangabe)",
+            "<b>0.6: mittelmäßig passierbar</b> abgesenkter Bordstein",
+            "<b>0.8: gut passierbar</b> Poller < 1.5 m | default Poller (keine Breitenangabe)",
+            "<b>1: problemlos passierbar</b> Poller >= 1.5 m | ebenerdiger Bordstein"
           ),
-          colors = palette(c(0:5)),
+          colors = palette_0_to_1(c(0, 0.2, 0.4, 0.6, 0.8, 1)),
           opacity = 0.8,
           position = "bottomleft", title = "Straßen mit Barrieren"
         )
@@ -212,7 +199,7 @@ server <- function(input, output, session) {
       shinyjs::show("subgroup_radioB")
 
       updateRadioButtons(session, "subgroup_radioB",
-        label = "Verkehr Subgruppen:",
+        label = "",
         choices = c("Autoverkehr", "Fußverkehr"),
         selected = "Autoverkehr"
       )
@@ -296,9 +283,9 @@ server <- function(input, output, session) {
           addLegend(
             layerId = "legend",
             labels = c(
-              "<b>1: sehr schlecht</b> Hauptstraßen (primary) ohne Radweg | Radweg < 1.2m | absteigen notwendig",
-              "<b>2: schlecht</b> Landesstraße (secondary) ohne Radweg | Radspur < 1.2m | Wege mit Fußverkehr geteilt",
-              "<b>3: mittelmäßig</b> default Radweg ohne Breite | Landesstraße (tertiary) ohne Radweg",
+              "<b>1: sehr schlecht</b> Bundestraßen (primary) ohne Radweg | Radweg < 1.2m | absteigen notwendig",
+              "<b>2: schlecht</b> Landesstraßen (secondary) ohne Radweg | Radspur < 1.2m | Wege mit Fußverkehr geteilt",
+              "<b>3: mittelmäßig</b> default Radweg ohne Breite | Vorfahrtstraßen (tertiary) ohne Radweg",
               "<b>4: gut</b> Radweg min 1.6m | Radspur mind. 1.2m | default Radspur ohne Breite | Wohngebiete",
               "<b>5: optimal</b> Fahrradstraße | min. 2m Radweg"
             ),
@@ -371,11 +358,11 @@ server <- function(input, output, session) {
           ) %>% 
           addLegend(
             layerId = "legend",
-            labels = c("geteilte Hauptstraßen (primary, trunk)",
+            labels = c("geteilte Bundesstraße (primary, trunk)",
                        "geteilte Landesstraße (secondary)",
-                       "geteilte Landesstraße (tertiary)",
-                       "geteilte Wohnstraßen"),
-            colors = palette_no_na(c(1:4)),
+                       "geteilte Vorfahrtstraße (tertiary)",
+                       "geteilte Straße im Wohngebiet (living_street, residential)"),
+            colors = palette_no_na(c(0.2,0.4,0.6, 0.8)),
             opacity = 0.8,
             position = "bottomleft", title = "Geteilte Straßen mit Autoverkehr"
           )

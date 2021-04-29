@@ -1,4 +1,5 @@
 index_info <- "Der Index berechnet sich aus den Werten zur Straßenqualität und Barrieren. 
+Er reicht von 0 - für Lastenräder nicht passierbar, bis 5 - optimale Bedingungen für Lastenräder.
 Informationen zum Vekehr sind im Index NICHT berücksichtigt, sondern werden hier nur zur Information angezeigt."
 
 street_quality_info <- "Die Straßenqualität setzt sich aus der Art der Straße (z.B. Radweg, Hauptstraße),
@@ -40,5 +41,106 @@ pedestrian_info <- "Fußverkehr stellt für Lastenräder besonders in zwei Fäll
 
 Hier sind alle Wege, die mit Fußgänger:innen geteilt werden und potenziell von Fußverkehr beeinträchtigt sind dargestellt. 
 Wege, auf denen ohnehin abgestiegen werden muss, sind nicht dargestellt, da die langsame Geschwindigkeit hier unabhängig von der Anzahl an Fußgänger:innen ist.
-<br>Beide Fälle sind stark zeitabhängig. Mit Fußgänger:innen geteilte Wege sind über die Straßenqualität bereits schlechter bewertet.
+
+Beide Fälle sind stark zeitabhängig. Mit Fußgänger:innen geteilte Wege sind über die Straßenqualität bereits schlechter bewertet.
 Darüber hinaus wird der Fußverkehr NICHT weiter in der Indexberechnung berücksichtigt, sondern hier nur zur Information dargestellt."
+
+
+preprocess_display_labels <- function(streets) {
+  
+  streets <- streets %>% 
+    mutate(cycleway_string = case_when(
+      cycleway_combined == "track" ~ "Radweg",
+      cycleway_combined == "lane" ~ "Radfahrstreifen",
+      cycleway_combined == "opposite_track" ~ "Radspur entgegen der Fahrtrichtung",
+      cycleway_combined == "share_busway" ~ "geteilte Busspur"
+    ),
+    cycleway_width_string = ifelse(is.na(cycleway_width_combined), NA, paste("Breite:", cycleway_width_combined, "m")),
+    cycleway_oneway_string = ifelse(cycleway_oneway_combined == "yes", "Zweirichtungsradweg", NA),
+    dismount_string = ifelse(dismount_necessary, "absteigen", NA),
+    segregated_string = ifelse(segregated %in% c("no"), "geteilt mit Fußweg", NA),
+    bicycle_road_string = ifelse(bicycle_road %in% c("yes"), "Fahrradstraße", NA),
+    highway_german = case_when(
+      highway == "cycleway" ~ "Radweg",
+      highway == "bridleway" ~ "Reitweg",
+      highway == "bus_guideway" ~ "Spurbus-Strecke",
+      highway == "corridor" ~ "Gang",
+      highway == "escape" ~ "Notbremsweg",
+      highway == "footway" ~ "Fußweg",
+      highway == "living_street" ~ "Spielstraße",
+      highway == "motorway" ~ "Schnellstraße",
+      highway == "motorway_link" ~ "Schnellstraßenzubringer",
+      highway == "path" ~ "Weg",
+      highway == "pedestrian" ~ "Fußgängerzone",
+      highway == "platform" ~ "Haltestelle",
+      highway == "primary" ~ "Bundesstraße",
+      highway == "primary_link" ~ "Bundesstraßen-Zubringer",
+      highway == "residential" ~ "Straße im Wohngebiet",
+      highway == "road" ~ "Straße (keine nähere Spezifikation)",
+      highway == "secondary" ~ "Landesstraße",
+      highway == "service" ~ "Erschließungsweg",
+      highway == "steps" ~ "Stufen",
+      highway == "tertiary" ~"Vorfahrtstraßen",
+      highway == "tertiary_link" ~"Vorfahrtstraßen-Zubringer",
+      highway == "track" ~"Feldweg",
+      highway == "trunk" ~"Kraftfahrstraße",
+      highway == "trunk_link" ~"Kraftfahrstraße-Zubringer",
+      highway == "unclassified" ~"befahrbare Nebenstraßen",
+      T ~ highway
+    ),
+    smoothness_german = case_when(
+      smoothness_combined == "excellent" ~ "ausgezeichnet",
+      smoothness_combined == "good" ~ "gut",
+      smoothness_combined == "intermediate" ~ "mittelmäßig",
+      smoothness_combined == "bad" ~ "schlecht",
+      smoothness_combined == "very bad" ~ "sehr schlecht",
+      smoothness_combined == "horrible" ~ "schrecklich",
+      smoothness_combined == "very horrible" ~ "sehr schrecklich",
+      smoothness_combined == "impassable" ~ "nicht passierbar",
+    ),
+    surface_german = case_when (
+      surface_combined == "paved" ~ "befestigt",
+      surface_combined == "asphalt" ~ "Asphalt",
+      surface_combined == "paving_stones" ~ "Pflastersteine",
+      surface_combined == "concrete" ~ "Beton",
+      surface_combined == "concrete:plates" ~ "Betonplatten",
+      surface_combined == "concrete:lanes" ~ "Betonspurbahnen",
+      surface_combined == "sett" ~ "ebenes Kopfsteinplaster",
+      surface_combined == "cobblestone" ~ "Kopfsteinpflaster",
+      surface_combined == "cobblestone:flattened" ~ "ebenes Kopfsteinplaster",
+      surface_combined == "unhewn_cobblestone" ~ "rohes Kopfsteinpflaster",
+      surface_combined == "unpaved" ~ "unbefestigt",
+      surface_combined == "compacted" ~ "verdichtete Deckschicht",
+      surface_combined == "dirt" ~ "unbefestigte Straße",
+      surface_combined == "earth" ~ "Trampelpfad",
+      surface_combined == "fine_gravel" ~ "Splitt",
+      surface_combined == "gravel" ~ "Schotter",
+      surface_combined == "grass" ~ "Gras",
+      surface_combined == "grass_paver" ~ "Rasengittersteine",
+      surface_combined == "ground" ~ "Trampelpfad",
+      surface_combined == "metal" ~ "Metall",
+      surface_combined == "mud" ~ "Schlamm",
+      surface_combined == "pebblestone" ~ "Kies",
+      surface_combined == "salt" ~ "Salzsee",
+      surface_combined == "sand" ~ "Sand",
+      surface_combined == "rock" ~ "Steine",
+      surface_combined == "wood" ~ "Holz"
+    ),
+    kerb_german = case_when(
+      as.character(kerb) == "flush" ~ "ebenerdig",
+      as.character(kerb) == "lowered" ~ "abgesenkt",
+      as.character(kerb) == "raised" ~ "nicht abgesenkt",
+      T ~ as.character(kerb)
+    ),
+    kerb_height_m = ifelse(is.na(kerb_height), NA, paste(kerb_height, "m"))
+    ) %>% 
+    unite("display_label_cycleway", 
+          c(highway_german, bicycle_road_string, cycleway_string, cycleway_width_string, cycleway_oneway_string,
+            segregated_string, dismount_string, surface_german, smoothness_german), na.rm = T, sep = ", ", remove = F) %>% 
+    unite("display_label_barrier", 
+          c(which_barrier, maxwidth_combined), na.rm = T, sep = ", ", remove = F) %>% 
+    unite("display_label_kerb", 
+          c(kerb_german, kerb_height_m), na.rm = T, sep = ": ", remove = F)
+  
+  return(streets)
+}
