@@ -138,7 +138,7 @@ preprocess_display_labels <- function(streets) {
           c(highway_german, bicycle_road_string, cycleway_string, cycleway_width_string, cycleway_oneway_string,
             segregated_string, dismount_string, surface_german, smoothness_german), na.rm = T, sep = ", ", remove = F) %>% 
     unite("display_label_barrier", 
-          c(which_barrier, maxwidth_combined), na.rm = T, sep = ", ", remove = F) %>% 
+          c(which_barrier, min_maxwidth), na.rm = T, sep = ", ", remove = F) %>% 
     unite("display_label_kerb", 
           c(kerb_german, kerb_height_m), na.rm = T, sep = ": ", remove = F)
   

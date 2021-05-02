@@ -54,9 +54,11 @@ ui <- bootstrapPage(
 )
 
 server <- function(input, output, session) {
-  streets_path <- here("data", paste0(city_name, ".Rds"))
+  streets_path <- here("data", paste0(city_name, "_streets.Rds"))
+  barriers_path <- here("data", paste0(city_name, "_barriers.Rds"))
   markets_path <- here("data", paste0(city_name, "_markets.Rds"))
   streets <- readRDS(streets_path)
+  barriers <- readRDS(barriers_path)
   markets <- readRDS(markets_path)
   
   streets <- preprocess_display_labels(streets)
@@ -74,9 +76,11 @@ server <- function(input, output, session) {
   GrYlRd <- c("#0F423E", "#479E8F", "#f4d03f", "#E76F51", "#B60202", "#6E1511") # darkgreen, green, yellow, orange, red, darkred
   GrYlRd_4 <- c( "#479E8F", "#f4d03f", "#E76F51", "#B60202") # darkgreen, green, yellow, orange, red, darkred
   palette <- colorBin(GrYlRd, domain = c(0:6), reverse = T, bins = 6)
-  palette_0_to_1 <- colorFactor(GrYlRd, domain = c(0,0.2,0.4,0.6,0.8,1), reverse = T)
+  palette_0_to_1 <- colorFactor(GrYlRd, domain = c(0,0.2,0.4,0.6,0.8,1), na.color = "transparent", reverse = T)
   palette_no_na <- colorFactor(GrYlRd_4, domain = c(0.2,0.4,0.6,0.8), reverse = T, na.color = "transparent")
   palette_pedestrian_traffic <- colorFactor(c("#E76F51"), domain = NULL, na.color = "transparent")
+  palette_barriers <- colorFactor("viridis", domain = c("cycle_barrier", "bollard", "block", "lift_gate", "kerb", "traffic_calming"), 
+                                  na.color = "transparent")
 
   output$map <- renderLeaflet({
     leaflet(streets) %>%
@@ -110,6 +114,7 @@ server <- function(input, output, session) {
 
       leafletProxy("map") %>%
         clearGroup("streets") %>%
+        clearGroup("barriers") %>%
         clearGroup("markets") %>%
         removeControl("legend2") %>% 
         addPolylines(
@@ -169,18 +174,32 @@ server <- function(input, output, session) {
       })
       leafletProxy("map") %>%
         clearGroup("streets") %>%
+        clearGroup("barriers") %>%
         clearGroup("markets") %>%
         removeControl("legend2") %>% 
         addPolylines(
           data = filter(streets, !is.na(which_barrier)),
           group = "streets",
           popup = ~ paste("<b>Barriere:", which_barrier, "</b><br>", 
-                          "Max. Breite:", maxwidth_combined, "<br>",
+                          "Max. Breite:", min_maxwidth, "<br>",
                           "Bordsteinhöhe:", display_label_kerb, "<br>"),
           color = ~ palette_0_to_1(cbindex_barrier),
           opacity = 0.9,
           weight = 5
         ) %>%
+        addCircleMarkers(
+          data = barriers,
+          group = "barriers",
+          popup = ~ paste(
+            "Barriere:", barrier,
+            "<br>", "Max. Breite:", maxwidth_barriers_combined,
+            "<br>", "Bordsteinhöhe:", kerb,
+            "<br>", "Bordsteinhöhe [m]:", height_cleaned),
+          color = "transparent",
+          fillColor = ~palette_barriers(barrier),
+          fillOpacity = 0.8,
+          radius = 5
+        ) %>% 
         addLegend(
           layerId = "legend",
           labels = c(
@@ -194,7 +213,16 @@ server <- function(input, output, session) {
           colors = palette_0_to_1(c(0, 0.2, 0.4, 0.6, 0.8, 1)),
           opacity = 0.8,
           position = "bottomleft", title = "Straßen mit Barrieren"
+        ) %>% 
+        addLegend(
+          layerId = "legend2",
+          labels = c("Umlaufgitter", "Poller", "Block", "Schranke", "Bordstein", "Bodenwelle"),
+          colors = palette_barriers(c("cycle_barrier", "bollard", "block", "lift_gate", "kerb", "traffic_calming")),
+          opacity = 0.8,
+          position = "bottomleft", title = "Barrieren (Punkte)"
         )
+          
+                  
     } else if (input$index_radioB == "traffic") {
       shinyjs::show("subgroup_radioB")
 
@@ -218,6 +246,7 @@ server <- function(input, output, session) {
 
         leafletProxy("map") %>%
           clearGroup("streets") %>%
+          clearGroup("barriers") %>%
           clearGroup("markets") %>%
           removeControl("legend2") %>% 
           addPolylines(
@@ -262,6 +291,7 @@ server <- function(input, output, session) {
 
         leafletProxy("map") %>%
           clearGroup("streets") %>%
+          clearGroup("barriers") %>%
           clearGroup("markets") %>%
           removeControl("legend2") %>% 
           addPolylines(
@@ -303,6 +333,7 @@ server <- function(input, output, session) {
 
         leafletProxy("map") %>%
           clearGroup("streets") %>%
+          clearGroup("barriers") %>%
           clearGroup("markets") %>%
           removeControl("legend2") %>% 
           addPolylines(
@@ -346,6 +377,7 @@ server <- function(input, output, session) {
 
         leafletProxy("map") %>%
           clearGroup("streets") %>%
+          clearGroup("barriers") %>%
           clearGroup("markets") %>% 
           removeControl("legend") %>%
           removeControl("legend2") %>% 
@@ -382,6 +414,7 @@ server <- function(input, output, session) {
 
         leafletProxy("map") %>%
           clearGroup("streets") %>%
+          clearGroup("barriers") %>%
           clearGroup("markets") %>% 
           removeControl("legend") %>%
           removeControl("legend2") %>% 
