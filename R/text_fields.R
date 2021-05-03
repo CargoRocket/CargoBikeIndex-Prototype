@@ -80,12 +80,12 @@ preprocess_display_labels <- function(streets) {
       highway == "secondary" ~ "Landesstraße",
       highway == "service" ~ "Erschließungsweg",
       highway == "steps" ~ "Stufen",
-      highway == "tertiary" ~"Vorfahrtstraßen",
+      highway == "tertiary" ~"Vorfahrtstraße",
       highway == "tertiary_link" ~"Vorfahrtstraßen-Zubringer",
       highway == "track" ~"Feldweg",
       highway == "trunk" ~"Kraftfahrstraße",
       highway == "trunk_link" ~"Kraftfahrstraße-Zubringer",
-      highway == "unclassified" ~"befahrbare Nebenstraßen",
+      highway == "unclassified" ~"befahrbare Nebenstraße",
       T ~ highway
     ),
     smoothness_german = case_when(

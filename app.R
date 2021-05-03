@@ -62,6 +62,15 @@ server <- function(input, output, session) {
   markets <- readRDS(markets_path)
   
   streets <- preprocess_display_labels(streets)
+  barriers <- barriers %>% 
+    mutate(display_label = case_when(
+      barrier == "cycle_barrier" ~ "Umlaufsperre",
+      barrier == "bollard" ~ "Poller",
+      barrier == "block" ~ "Block",
+      barrier == "lift_gate" ~ "Schranke",
+      barrier == "traffic_calming" ~ "Bodenwelle",
+      barrier == "kerb" ~ "Bordstein"
+    ))
 
   # TODO: better integrate preprocessing without duplicating script
   # if (file.exists(streets_path) & !delete_cache) {
@@ -75,12 +84,13 @@ server <- function(input, output, session) {
 
   GrYlRd <- c("#0F423E", "#479E8F", "#f4d03f", "#E76F51", "#B60202", "#6E1511") # darkgreen, green, yellow, orange, red, darkred
   GrYlRd_4 <- c( "#479E8F", "#f4d03f", "#E76F51", "#B60202") # darkgreen, green, yellow, orange, red, darkred
+  barrier_colors <- c("#650E59", "#AE0D3A", "#E4114C", "#231F70", "#415AC7", "#5A9AE5")
   palette <- colorBin(GrYlRd, domain = c(0:6), reverse = T, bins = 6)
   palette_0_to_1 <- colorFactor(GrYlRd, domain = c(0,0.2,0.4,0.6,0.8,1), na.color = "transparent", reverse = T)
   palette_no_na <- colorFactor(GrYlRd_4, domain = c(0.2,0.4,0.6,0.8), reverse = T, na.color = "transparent")
   palette_pedestrian_traffic <- colorFactor(c("#E76F51"), domain = NULL, na.color = "transparent")
-  palette_barriers <- colorFactor("viridis", domain = c("cycle_barrier", "bollard", "block", "lift_gate", "kerb", "traffic_calming"), 
-                                  na.color = "transparent")
+  palette_barriers <- colorFactor(barrier_colors, domain = c("cycle_barrier", "bollard", "block", "lift_gate", "kerb", "traffic_calming"), 
+                                  na.color = "transparent", ordered = T)
 
   output$map <- renderLeaflet({
     leaflet(streets) %>%
@@ -178,7 +188,7 @@ server <- function(input, output, session) {
         clearGroup("markets") %>%
         removeControl("legend2") %>% 
         addPolylines(
-          data = filter(streets, !is.na(which_barrier)),
+          data = filter(streets, which_barrier != "" ),
           group = "streets",
           popup = ~ paste("<b>Barriere:", which_barrier, "</b><br>", 
                           "Max. Breite:", min_maxwidth, "<br>",
@@ -191,7 +201,7 @@ server <- function(input, output, session) {
           data = barriers,
           group = "barriers",
           popup = ~ paste(
-            "Barriere:", barrier,
+            "Barriere:", display_label,
             "<br>", "Max. Breite:", maxwidth_barriers_combined,
             "<br>", "Bordsteinhöhe:", kerb,
             "<br>", "Bordsteinhöhe [m]:", height_cleaned),
@@ -382,7 +392,7 @@ server <- function(input, output, session) {
           removeControl("legend") %>%
           removeControl("legend2") %>% 
           addPolylines(
-            data = streets,
+            data = filter(streets, is.na(car_traffic)),
             group = "streets",
             color = ~ palette_no_na(car_traffic),
             opacity = 0.9,
@@ -419,7 +429,7 @@ server <- function(input, output, session) {
           removeControl("legend") %>%
           removeControl("legend2") %>% 
           addPolylines(
-            data = streets,
+            data = filter(streets, is.na(pedestrian_traffic)),
             group = "streets",
             color = ~ palette_pedestrian_traffic(pedestrian_traffic),
             opacity = 0.9,
@@ -456,5 +466,6 @@ server <- function(input, output, session) {
     ignoreInit = T
   )
 }
+
 
 shinyApp(ui, server)
