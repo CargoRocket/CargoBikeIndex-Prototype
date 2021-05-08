@@ -46,7 +46,7 @@ Beide Fälle sind stark zeitabhängig. Mit Fußgänger:innen geteilte Wege sind 
 Darüber hinaus wird der Fußverkehr NICHT weiter in der Indexberechnung berücksichtigt, sondern hier nur zur Information dargestellt."
 
 
-preprocess_display_labels <- function(streets) {
+preprocess_display_labels <- function(streets, palette, palette_0_to_1, palette_no_na, palette_barriers) {
   
   streets <- streets %>% 
     mutate(cycleway_string = case_when(
@@ -140,7 +140,57 @@ preprocess_display_labels <- function(streets) {
     unite("display_label_barrier", 
           c(which_barrier, min_maxwidth), na.rm = T, sep = ", ", remove = F) %>% 
     unite("display_label_kerb", 
-          c(kerb_german, kerb_height_m), na.rm = T, sep = ": ", remove = F)
+          c(kerb_german, kerb_height_m), na.rm = T, sep = ": ", remove = F) %>% 
+    mutate(html_index_label = paste(
+      "<b>", name, "- Index:", cbindex, "</b>",
+      "<br>",
+      "<br>", "Sub-Index Straßenqualität:", cbindex_street_quality,
+      "<br>", "<i>", display_label_cycleway, "</i>",
+      "<br>",
+      "<br>", "Sub-Index Barrieren:", cbindex_barrier,
+      "<br>", "<i>", display_label_barrier, "</i>"
+    ), 
+    index_color = palette(cbindex), 
+    index_stroke_width = ifelse(cbindex < 1, 1, 2*cbindex),
+    html_streetquality_label = paste(
+            "<b>Straßenqualität:", cbindex_street_quality, "</b>",
+            "<br>", "Straßentyp:", highway,
+            "<br>", "Radweg:", cycleway_combined,
+            "<br>", "Radwegs-Breite:", cycleway_width_combined,
+            "<br>", "Fahrradstraße:", bicycle_road,
+            "<br>", "Höchstgeschwindigkeit:", maxspeed,
+            "<br>", "Getrennter Radweg:", segregated,
+            "<br>", "Oberfläche:", surface_combined,
+            "<br>", "Qualität:", smoothness_combined
+          ),
+    streetquality_color = palette(cbindex_street_quality), 
+    streetquality_stroke_width = ifelse(cbindex_street_quality < 1, 1, 2*cbindex_street_quality),
+    html_streettpye_label = paste(
+      "<b>Straßentyp Bewertung:", cbindex_cycleways,"</b>",
+        "<br>", "Straßentyp:", highway,
+        "<br>", "Fahrradstraße:", bicycle_road,
+        "<br>", "Radweg:", cycleway_combined,
+        "<br>", "Radwegs-Breite:", cycleway_width_combined,
+        "<br>", "Getrennter Radweg:", segregated,
+        "<br>", "Absteigen notwendig:", dismount_necessary,
+        "<br>", "Höchstgeschwindigkeit:", maxspeed
+      ),
+    streettype_color = palette(cbindex_cycleways), 
+    streettype_stroke_width = ifelse(cbindex_cycleways < 1, 1, 2*cbindex_cycleways),
+    html_barrier_label = paste(
+      "<b>Barriere Bewertung:", cbindex_barrier,"</b>","<br>",
+      "Barriere:", which_barrier, "<br>",
+      "Max. Breite:", min_maxwidth, "<br>",
+      "Bordsteinhöhe:", display_label_kerb, "<br>"),
+    barrier_color = palette_0_to_1(cbindex_barrier), 
+    html_surface_label = paste(
+      "<b>Oberflächenqualität:", cbindex_surface,"</b>",
+      "<br>", "Oberfläche:", surface_combined, 
+      "<br>", "Qualität:", smoothness_combined),
+    surface_color = palette(cbindex_surface), 
+    surface_stroke_width = ifelse(cbindex_surface < 1, 1, 2*cbindex_surface),
+    car_traffic_color = palette_no_na(car_traffic)
+    )
   
   return(streets)
 }
