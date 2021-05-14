@@ -8,33 +8,40 @@ div.outer {
   overflow: hidden;
   padding: 0;
 }
-#title {
-    padding-top: 15px;
-    padding-bottom: 15px;
-}
+
 #info_text {
-  font-size: 12px;
-  padding-bottom: 15px;
+  font-size: 11px;
+  padding-bottom: 5px;
 }
 #input_box{
   z-index:500; 
   text-align: left; 
   background: #ECECECE6; 
-  padding: 15px; 
+  padding: 10px 5px 5px 10px; 
   border-radius: 10px;
   width:360px;
-}
-
-#index_radioB {
 }
 
 #subgroup_radioB{
   font-size: 12px;
   background: #BBBBBBE6;
-  padding: 15px; 
+  padding: 5px; 
   border-radius: 10px;
 
 }
 #info_hover{
   font-size:12px;
+}
+
+#basemap_radioB {
+  font-size:10px;
+  background: #ECECECE6; 
+  padding: 10px 5px 5px 10px; 
+  border-radius: 10px;
+  max-width: 100px;
+  z-index:500; 
+}
+  
+.legend {
+  max-width: 600px !important;
 }

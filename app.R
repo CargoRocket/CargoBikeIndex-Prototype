@@ -32,8 +32,8 @@ ui <- bootstrapPage(
     mapdeckOutput("map", height = "100%"),
     absolutePanel(
       id = "input_box",
-      top = 25,
-      left = 20,
+      top = 10,
+      left = 10,
       tags$h3(textOutput("title")),
       textOutput("info_text"),
       radioButtons("index_radioB",
@@ -48,8 +48,12 @@ ui <- bootstrapPage(
       shinyWidgets::setShadow(id = "input_box")
     ),
     absolutePanel(
-      bottom = 20, right = 20, style = "z-index:500; text-align: right;", fixed = T,
+      bottom = 20, left = 20, style = "z-index:500; text-align: right;", fixed = T,
       tags$p(HTML('<a href = "https://cargorocket.de/impress">Impressum</a>')),
+    ),
+    absolutePanel(
+      top = 20, right = 20, fixed = T,
+      radioButtons("basemap_radioB", label = "Basemap", choices = c("Standard" = "streets", "Hell" = "light",  "Satellit" = "satellite")),
     )
   )
 )
@@ -62,14 +66,14 @@ server <- function(input, output, session) {
   barriers <- readRDS(barriers_path)
   markets <- readRDS(markets_path)
   
-  GrYlRd <- c("#0F423E", "#479E8F", "#f4d03f", "#E76F51", "#B60202", "#6E1511") # darkgreen, green, yellow, orange, red, darkred
-  GrYlRd_4 <- c( "#479E8F", "#f4d03f", "#E76F51", "#B60202") # darkgreen, green, yellow, orange, red, darkred
-  barrier_colors <- c("#650E59", "#AE0D3A", "#E4114C", "#231F70", "#415AC7", "#5A9AE5")
-  palette <- colorBin(GrYlRd, domain = c(0:6), reverse = T, bins = 6)
-  palette_0_to_1 <- colorFactor(GrYlRd, domain = c(0,0.2,0.4,0.6,0.8,1), na.color = "transparent", reverse = T)
-  palette_no_na <- colorFactor(GrYlRd_4, domain = c(0.2,0.4,0.6,0.8), reverse = T, na.color = "transparent")
+  GrYlRd <- c("#056B5AB3", "#479E8FB3", "#f4d03fB3", "#E76F51B3", "#B60202B3", "#6E1511B3") # darkgreen, green, yellow, orange, red, darkred
+  GrYlRd_4 <- c( "#479E8FB3", "#f4d03fB3", "#E76F51B3", "#B60202B3") # darkgreen, green, yellow, orange, red, darkred
+  barrier_colors <- c("#650E59B3", "#AE0D3AB3", "#E4114CB3", "#231F70B3", "#415AC7B3", "#5A9AE5B3")
+  palette <- colorBin(GrYlRd, domain = c(0:6), reverse = T, bins = 6, alpha = T)
+  palette_0_to_1 <- colorFactor(GrYlRd, domain = c(0,0.2,0.4,0.6,0.8,1), na.color = "transparent", reverse = T, alpha = T)
+  palette_no_na <- colorFactor(GrYlRd_4, domain = c(0.2,0.4,0.6,0.8), reverse = T, na.color = "transparent", alpha = T)
   palette_barriers <- colorFactor(barrier_colors, domain = c("cycle_barrier", "bollard", "block", "lift_gate", "kerb", "traffic_calming"), 
-                                  na.color = "transparent", ordered = T)
+                                  na.color = "transparent", ordered = T, alpha = T)
   
   streets <- preprocess_display_labels(streets, palette, palette_0_to_1, palette_no_na, palette_barriers)
   barriers <- barriers %>% 
@@ -96,7 +100,7 @@ server <- function(input, output, session) {
    loc_lat <- (st_bbox(streets)[[2]] + st_bbox(streets)[[4]]) / 2
 
     output$map <- renderMapdeck({
-     mapdeck(data = streets, token = mapbox_key, 
+     mapdeck(data = streets, token = mapbox_key, style = mapdeck_style("streets"),
              location = c(loc_lon, loc_lat),
              zoom = 11, min_zoom = 7, max_zoom = 15) 
    })
@@ -121,7 +125,7 @@ server <- function(input, output, session) {
           tooltip = "html_index_label",
           stroke_colour = "index_color",
           stroke_width = "index_stroke_width",
-          stroke_opacity = 0.9,
+          stroke_opacity = 0.7,
           update_view = F,
           legend = mapdeck_legend(legend_element(
             variables = c(
@@ -173,7 +177,7 @@ server <- function(input, output, session) {
           tooltip = "html_barrier_label",
           stroke_colour = "barrier_color",
           stroke_width = 10,
-          stroke_opacity = 0.9,
+          stroke_opacity = 0.7,
           update_view = F,
           legend = mapdeck_legend(legend_element(
             variables = c(
@@ -188,6 +192,8 @@ server <- function(input, output, session) {
             , colour_type = "stroke"
             , variable_type = "category"
             , title = "Straßen mit Barrieren"
+            #, css = "max-width:400px"
+            
           ))) %>% 
         add_scatterplot(
           id = "barriers",
@@ -236,7 +242,7 @@ server <- function(input, output, session) {
             tooltip = "html_street_quality_label",
             stroke_colour = "streetquality_color",
             stroke_width = "streetquality_stroke_width",
-            stroke_opacity = 0.9,
+            stroke_opacity = 0.7,
             update_view = F,
             legend = mapdeck_legend(legend_element(
               variables = c(
@@ -263,7 +269,7 @@ server <- function(input, output, session) {
         })
 
         mapdeck_update(map_id = "map") %>% 
-          clear_scatterplot("barriers") %>% 
+         clear_scatterplot("barriers") %>% 
           clear_scatterplot("markets") %>% 
           add_path(
             id = "streets",
@@ -271,7 +277,7 @@ server <- function(input, output, session) {
             tooltip = "html_streettype_label",
             stroke_colour = "streettype_color",
             stroke_width = "streettype_stroke_width",
-            stroke_opacity = 0.9,
+            stroke_opacity = 0.7,
             update_view = F,
             legend = mapdeck_legend(legend_element(
               variables = c(
@@ -305,7 +311,7 @@ server <- function(input, output, session) {
             tooltip = "html_surface_label",
             stroke_colour = "surface_color",
             stroke_width = "surface_stroke_width",
-            stroke_opacity = 0.9,
+            stroke_opacity = 0.7,
             update_view = F,
             legend = mapdeck_legend(legend_element(
               variables = c(
@@ -346,7 +352,6 @@ server <- function(input, output, session) {
             stroke_colour = "car_traffic_color",
             tooltip = "highway",
             stroke_width = 10,
-            stroke_opacity = 0.9,
             update_view = F,
             legend = mapdeck_legend(legend_element(
               variables = c("geteilte Bundesstraße (primary, trunk)",
@@ -357,6 +362,7 @@ server <- function(input, output, session) {
               , colour_type = "stroke"
               , variable_type = "category"
               , title = "Geteilte Straßen mit Autoverkehr"
+              #, css = "max-width:400px"
             )))
         
         
@@ -378,10 +384,9 @@ server <- function(input, output, session) {
           add_path(
             id = "streets",
             data = filter(streets, !is.na(pedestrian_traffic)),
-            stroke_colour = "#E76F51",
+            stroke_colour = "#E76F51B3",
             tooltip = "highway",
             stroke_width = 10,
-            stroke_opacity = 0.9,
             update_view = F,
             legend = mapdeck_legend(legend_element(
               variables = c("geteite Wege")
@@ -394,7 +399,7 @@ server <- function(input, output, session) {
             id = "markets",
             update_view = F,
             data = markets,
-            tooltip = "html_market_tootltip",
+            tooltip = "html_market_label",
             fill_colour = "#B60202",
             radius = 20,
             legend = mapdeck_legend(legend_element(
@@ -409,6 +414,12 @@ server <- function(input, output, session) {
     },
     ignoreInit = T
   )
+
+  observeEvent(input$basemap_radioB, {
+      mapdeck_update(map_id = "map") %>% 
+        update_style(style = mapdeck_style(input$basemap_radioB))
+  }, ignoreInit = T)
+  
 }
 
 
