@@ -4,6 +4,8 @@
   CargoRocket CargoBikeIndex
   ---
 </div>
+**DEPRECATED:Map with CargoBikeIndex is now directly integrated into [the website](https://github.com/CargoRocket/website/blob/master/assets/js/cargobikeindex.js)**
+
 
 R ShinyApp to create and visualize the CargoBikeIndex.
 
